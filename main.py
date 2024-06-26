@@ -28,6 +28,7 @@ client_secret = os.environ.get("SPOTIFY_CLIENT_SECRET")
 """
  - REMEMBER TO CHANGE sudo nano ~/.bashrc TO DEFAULT SO THAT USER CAN INPUT THEIR OWN
  - Put into README.md that user must install imports
+ - Maybe we can tell them to input their 5 fav albums
 """
 
 # Check if client credentials are correctly loaded
