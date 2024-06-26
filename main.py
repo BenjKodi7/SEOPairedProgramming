@@ -1,3 +1,4 @@
+import json
 import re
 import os
 import requests
@@ -54,13 +55,13 @@ auth_response_data = auth_response.json()
 
 playlist_ID_of_User = input("Enter the URL of your desired Spotify playlist: ")
 
-# test_URL = "https://open.spotify.com/embed/playlist/1eSCRbeCHNCbDXhWhBpSLl?utm_source=generator"
+test_URL = "https://open.spotify.com/embed/playlist/1eSCRbeCHNCbDXhWhBpSLl?utm_source=generator"
 
 # Create a function, getPlaylistID, that takes a playlist URL and uses a REGEX to 
 # return the ID by itself. Store the ID (Testable Function) -------------------------------
 
 def getPlaylistID(playlistURL: str) -> str:
-    matches = re.findall('playlist/(\w+)', playlistURL)
+    matches = re.findall('album/(\w+)', playlistURL)
     if matches:
         return matches[0]
     else:
@@ -69,7 +70,7 @@ def getPlaylistID(playlistURL: str) -> str:
 # print(getPlaylistID(test_URL)) # Test Works
 
 playlistID = getPlaylistID(playlist_ID_of_User)
-
+print(playlistID)
 
 # Use the stored ID with the "Get Playlist Items" Spotify API Endpoint to 
 # access all of the songs (Testable Function) -----------------------------------------
@@ -81,10 +82,28 @@ if 'access_token' in auth_response_data:
 
 
     # Get Playlist Items (GET) request
-    response = requests.get(f"{BASE_URL}playlists/{playlistID}/tracks", headers=headers)
-    # json = response.json()
+    # response = requests.get(f"{BASE_URL}playlists/{playlistID}/tracks", headers=headers)
+
+    # Get Album Items (GET) request
+    response = requests.get(f"{BASE_URL}albums/{playlistID}/tracks", headers=headers)
 
     print(response.status_code)
+    utopia = "https://open.spotify.com/album/18NOKLkZETa4sWwLMIm0UZ?si=JQNJKMDGQEGaHXCOsgLGqQ"
+    json_data = json.loads(response.text)
+ 
+    # Song names (and features)
+
+    songNames = []
+
+    for track_name in json_data['items']:
+        songNames.append(track_name['name'])
+
+
+    # Song artists
+        
+    artists = []
+    for track_name in json_data['items']:
+        artists.append(track_name['artists'][0]['name'])
 
 else:
     print("Error: 'access_token' not found in the response.")
