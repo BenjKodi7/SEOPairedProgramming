@@ -2,11 +2,8 @@ import json
 import re
 import os
 import requests
-# import pandas as pd
-# import sqlalchemy as db
-
-import pandas as pd
-import sqlalchemy as db
+import pandas as pd     # pip install pandas
+import sqlalchemy as db # pip install aslalchemy
 
 """
 User enters playlist url of a public playlist. 
@@ -19,9 +16,8 @@ Put them into the database
 Ask ChatGPT to “tell me about myself” based on these songs and their artists (Testable function)
 """
 
-# Gain Access to Spotify API -----------------------------
+# Gain Access to Spotify API ---------------------------------------------------
 
-# Constants for Spotify API
 AUTH_URL = 'https://accounts.spotify.com/api/token'
 BASE_URL = 'https://api.spotify.com/v1/'
 
@@ -31,7 +27,7 @@ BASE_URL = 'https://api.spotify.com/v1/'
  - Maybe we can tell them to input their 5 fav albums
 """
 
-# Connects to the Spotify API and returns the authentication response data
+# Connects to the Spotify API and returns the authentication response data -----
 def connectSpotifyAPI():
 
     # Get client credentials from environment variables
@@ -52,20 +48,17 @@ def connectSpotifyAPI():
         }
     )
 
-    # Print the status code and response
-    # print("Status Code:", auth_response.status_code)
-    # print("Response JSON:", auth_response.json())
-
     # Check that the status code of the POST request is valid
     if auth_response.status_code == 200:
         # Return response
         return auth_response.json()
     else:
-        print(f"Post request failed :(\n Status Code: {auth_response.status_code}")
+        print("Post request failed :(")
+        print("Status Code: ", auth_response.status_code)
         return None
 
 
-# Takes a URL and uses REGEX to return ID in URL.
+# Takes a URL and uses REGEX to return ID in URL -------------------------------
 def getPlaylistID(playlistURL: str) -> str:
     matches = re.findall('album/(\w+)', playlistURL)
     if matches:
@@ -102,16 +95,49 @@ def getUserData(auth_response_data):
         # response = requests.get(f"{BASE_URL}playlists/{playlistID}/tracks", headers=headers)
 
         # Get Album Items (GET) request
-        response = requests.get(f"{BASE_URL}albums/{playlistID}/tracks", headers=headers)
+        response = requests.get(f"{BASE_URL}albums/{playlistID}/tracks", headers = headers)
 
-        print(response.status_code)
-        #utopia = "https://open.spotify.com/album/18NOKLkZETa4sWwLMIm0UZ?si=JQNJKMDGQEGaHXCOsgLGqQ"
-        json_data = json.loads(response.text)
+        if response.status_code == 200:
 
-        albumData = response.json()
+            albumData = response.json()
 
+            # Create a list to store track details
+            tracks = []
+
+            for item in albumData['items']:
+                track_name = item['name']
+                artist_names = [artist['name'] for artist in item['artists']]
+                tracks.append({'name': track_name, 'artists': artist_names})
+
+            # Convert to DataFrame
+            tracks_df = pd.DataFrame(tracks)
+
+            print(tracks_df)
+
+            '''
+            print(response.status_code)
+            utopia = "https://open.spotify.com/album/18NOKLkZETa4sWwLMIm0UZ?si=JQNJKMDGQEGaHXCOsgLGqQ"
+            json_data = json.loads(response.text)
+            '''
+            return tracks_df
+
+        else:
+            print("Attempt to retrieve album tracks failed :(")
+            print("Status Code: ", response.status_code)
+            return None
+
+        
+        '''
         albumDataDF = pd.DataFrame.from_dict(albumData)
         print(albumDataDF)
+
+        items = albumDataDF['items']['name']
+        print(type(items))
+        itemDF = pd.Series(items)
+
+        print("Items DF: \n", itemDF)
+
+        '''
 
         '''
         # Song names (and features)
@@ -130,11 +156,12 @@ def getUserData(auth_response_data):
 
         '''
     else:
-        print("Error: 'access_token' not found in the response.")
         error = auth_response_data.get('error', 'No error key')
         error_description = auth_response_data.get('error_description', 'No error description')
-        print(f"Response contains error: {error}")
-        print(f"Error description: {error_description}")
+
+        print("Error: 'access_token' not found in the response.")
+        print("Response contains error: ", error)
+        print("Error description: :", error_description)
 
 
 # Parse through the reponse.json() and retrieve all of the song titles, artists, and genres
@@ -142,7 +169,15 @@ def getUserData(auth_response_data):
 
 
 # Store the songs respectively with their titles, artists and genres into an SQL Database -----------------------------------------
-def listToSQL(list):
+def makeSQLDB(trackData):
+    # Create Engine Object
+    engine = db.create_engine('sqlite:///top_stories.db')
+
+    trackData.to_sql('stories', con=engine, if_exists='replace', index=False)
+
+    with engine.connect() as connection:
+        query_result = connection.execute(db.text("SELECT * FROM stories;")).fetchall()
+        print(pd.DataFrame(query_result))
 
     return None
 
@@ -157,8 +192,6 @@ def listToSQL(list):
 # Main 
 if __name__ == "__main__":
 
-    programBadEnding = "Program Ended\n----------------------------------------"
-
     # Gain Access to Spotify API
     requestResponse = connectSpotifyAPI()
 
@@ -167,10 +200,12 @@ if __name__ == "__main__":
         # Get User's playlist data
         playlistData = getUserData(requestResponse)
 
-        if playlistData is None:
-            print(programBadEnding)
+        if playlistData is not None:
+            print("Next step: Convert data into SQL Data Baser")
+            #makeSQLDB(playlistData)
         
         # Make an SQL Data Base out of the playlist data
-    else:
-        print(programBadEnding)
+
+    print("Program Ended")
+    print("-----------------------------------------------------")
         
