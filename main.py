@@ -59,11 +59,12 @@ def connectSpotifyAPI():
 
 # Takes a URL and uses REGEX to return ID in URL ----------------------
 def getPlaylistID(playlistURL: str) -> str:
-    matches = re.findall(r'album/(\w+)', playlistURL)
+    matches = re.findall(r'playlist/(\w+)', playlistURL)
     if matches:
         return matches[0]
     else:
-        print("Failed to find ID in URL")
+        print("Failed to find ID in URL.")
+        print("Are you sure you provided the URL to a playlist?")
         return None
 
 
@@ -73,10 +74,10 @@ def getUserData(auth_response_data):
 
     # playlist_ID_of_User = input("Enter the URL of your " +
     #                             "desired Spotify playlist: ")
-    testURL = ("https://open.spotify.com/album/"
-               "392p3shh2jkxUxY2VHvlH8?si=Yy8_QKeqQHClHOKzvAsIMw")
+    # private playlist : testURL = "https://open.spotify.com/playlist/6apWQTrRNhEMuBujns9chK?si=9c88080e69964873&pt=01d18107817e41c4565f70c9c07a9e87"
+    # public playlist: testURL = "https://open.spotify.com/playlist/0I4PTtWuqYVcVfVUPat2jT?si=4176e6499f0f46dd"
 
-    # playlistID = getPlaylistID(playlist_ID_of_User)
+    testURL = "https://open.spotify.com/playlist/0I4PTtWuqYVcVfVUPat2jT?si=4176e6499f0f46dd"
     playlistID = getPlaylistID(testURL)
 
     # print(playlistID)   # test that getPlaylistID works correctly
@@ -97,19 +98,19 @@ def getUserData(auth_response_data):
                                 headers=headers)
 
         # Get Album Items (GET) request
-        response = requests.get(f"{BASE_URL}albums/{playlistID}/tracks",
+        response = requests.get(f"{BASE_URL}playlists/{playlistID}",
                                 headers=headers)
 
         if response.status_code == 200:
-
             albumData = response.json()
 
             # Create a list to store track details
+            print("Playlist Title: ", albumData['name'])
             tracks = []
 
-            for item in albumData['items']:
-                track_name = item['name']
-                artist_names = [artist['name'] for artist in item['artists']]
+            for item in albumData['tracks']['items']:
+                track_name = item['track']['name']
+                artist_names = [artist['name'] for artist in item['track']['artists']]
                 tracks.append({'name': track_name, 'artists': artist_names})
 
             # Convert to DataFrame
@@ -117,46 +118,17 @@ def getUserData(auth_response_data):
 
             # print(tracks_df) # Test to see if outputted correctly
 
-            # print(response.status_code)
-            # utopia_url = ("https://open.spotify.com/album/"
-            #               "18NOKLkZETa4sWwLMIm0UZ?si=JQNJKMDGQEGaHXCOsgLGqQ")
-            # json_data = json.loads(response.text)
-
             return tracks_df
 
         else:
             print("Attempt to retrieve album tracks failed :(")
             print("Status Code: ", response.status_code)
+
+            if response.status_code == 404:
+                print("The URL you provided may belong to a private playlist.")
+                print("Try making the playlist public, or providing the URL of a different (public) playlist.")
             return None
 
-        '''
-        albumDataDF = pd.DataFrame.from_dict(albumData)
-        print(albumDataDF)
-
-        items = albumDataDF['items']['name']
-        print(type(items))
-        itemDF = pd.Series(items)
-
-        print("Items DF: \n", itemDF)
-
-        '''
-
-        '''
-        # Song names (and features)
-
-        songNames = []
-
-        for track_name in json_data['items']:
-            songNames.append(track_name['name'])
-        # Song artists
-
-        artists = []
-        for track_name in json_data['items']:
-            artists.append(track_name['artists'][0]['name'])
-
-        return [songNames, artists]
-
-        '''
     else:
         error = auth_response_data.get('error', 'No error key')
         error_description = auth_response_data.get('error_description',
@@ -287,4 +259,4 @@ if __name__ == "__main__":
 
         # Make an SQL Data Base out of the playlist data
 
-    print("\n-------------------------Program Ended--------------------------")
+    print("\n--------------------------Program Ended--------------------------")
