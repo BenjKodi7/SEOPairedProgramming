@@ -174,11 +174,6 @@ def makeSQLDB(trackData):
 # Give ChatGPT this database as input and
     # ask it to tell the user about their: ---------------
 
-    # Musical preferences
-    # Personal insights
-    # Personality
-# All based on the inputted music -----------------------------------------
-
 # Formats a prompt for the ChatGPT API based of the user's playlist data.
 # Function Returns ChatGPT's insights.
 def promptChat():
