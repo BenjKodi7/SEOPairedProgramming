@@ -170,16 +170,24 @@ def getUserData(auth_response_data):
 
 # Store the songs respectively with their titles, artists and genres into an SQL Database -----------------------------------------
 def makeSQLDB(trackData):
+    # Convert the list of artists to a JSON string
+    trackData['artists'] = trackData['artists'].apply(json.dumps)
+
     # Create Engine Object
-    engine = db.create_engine('sqlite:///top_stories.db')
+    engine = db.create_engine('sqlite:///track_list.db')
 
-    trackData.to_sql('stories', con=engine, if_exists='replace', index=False)
+    # Write DataFrame to SQL database
+    trackData.to_sql('tracks', con=engine, if_exists='replace', index=False)
 
+    # Read data back from SQL database and print it
     with engine.connect() as connection:
-        query_result = connection.execute(db.text("SELECT * FROM stories;")).fetchall()
-        print(pd.DataFrame(query_result))
+        query_result = connection.execute(db.text("SELECT * FROM tracks;")).fetchall()
+        df = pd.DataFrame(query_result, columns=['name', 'artists'])
 
-    return None
+        # Deserialize the JSON string back to a list
+        df['artists'] = df['artists'].apply(json.loads)
+
+    print("DF = ", df)
 
 
 # Give ChatGPT this database as input and ask it to tell the user about their: -----------------------------------------
@@ -201,8 +209,8 @@ if __name__ == "__main__":
         playlistData = getUserData(requestResponse)
 
         if playlistData is not None:
-            print("Next step: Convert data into SQL Data Baser")
-            #makeSQLDB(playlistData)
+            print("Next step: Convert data into SQL Data Base")
+            makeSQLDB(playlistData)
         
         # Make an SQL Data Base out of the playlist data
 
