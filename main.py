@@ -72,13 +72,13 @@ def getPlaylistID(playlistURL: str) -> str:
 # Returns the songs/artists in json format
 def getUserData(auth_response_data):
 
-    # playlist_ID_of_User = input("Enter the URL of your " +
-    #                             "desired Spotify playlist: ")
+    playlist_URL = input("Enter the URL of your " +
+                                "desired Spotify playlist: ")
     # private playlist : testURL = "https://open.spotify.com/playlist/6apWQTrRNhEMuBujns9chK?si=9c88080e69964873&pt=01d18107817e41c4565f70c9c07a9e87"
     # public playlist: testURL = "https://open.spotify.com/playlist/0I4PTtWuqYVcVfVUPat2jT?si=4176e6499f0f46dd"
 
-    testURL = "https://open.spotify.com/playlist/0I4PTtWuqYVcVfVUPat2jT?si=4176e6499f0f46dd"
-    playlistID = getPlaylistID(testURL)
+    # testURL = "https://open.spotify.com/playlist/0I4PTtWuqYVcVfVUPat2jT?si=4176e6499f0f46dd"
+    playlistID = getPlaylistID(playlist_URL)
 
     # print(playlistID)   # test that getPlaylistID works correctly
 
@@ -148,7 +148,46 @@ def getUserData(auth_response_data):
 
 # Store the songs respectively with their titles,
         # artists and genres into an SQL Database ------------------------
-def makeSQLDB(trackData):
+
+# Create empty DB (replace if one already exists)
+# def makeEmptySQLDB():
+
+#     # Create Engine Object
+#     engine = db.create_engine('sqlite:///track_list.db')
+
+#     trackData = pd.DataFrame([{'name': "", 'artists': ""}])
+
+#     # Write DataFrame to SQL database
+#     trackData.to_sql('tracks', con=engine, if_exists='replace', index=False)
+
+#     # Read data back from SQL database and print it
+#     with engine.connect() as connection:
+#         query = db.text("SELECT * FROM tracks;")
+#         result = connection.execute(query)
+#         query_result = result.fetchall()
+#         df = pd.DataFrame(query_result, columns=['name', 'artists'])
+
+#     print("DF = ", df)
+        
+def makeEmptySQLDB():
+    # Create Engine Object
+    engine = db.create_engine(f'sqlite:///track_list.db')
+
+    # Connect to the database
+    with engine.connect() as connection:
+        # Retrieve all table names
+        inspector = db.inspect(engine)
+        tables = inspector.get_table_names()
+
+        # Drop each table
+        for table in tables:
+            drop_table_query = db.text(f"DROP TABLE IF EXISTS {table};")
+            connection.execute(drop_table_query)
+
+    print(f"The database 'track_list.db' has been emptied.")
+
+# Append track data to an existing Database
+def appendSQLDB(trackData):
     # Convert the list of artists to a JSON string
     trackData['artists'] = trackData['artists'].apply(json.dumps)
 
@@ -156,7 +195,7 @@ def makeSQLDB(trackData):
     engine = db.create_engine('sqlite:///track_list.db')
 
     # Write DataFrame to SQL database
-    trackData.to_sql('tracks', con=engine, if_exists='replace', index=False)
+    trackData.to_sql('tracks', con=engine, if_exists='append', index=False)
 
     # Read data back from SQL database and print it
     with engine.connect() as connection:
@@ -164,9 +203,6 @@ def makeSQLDB(trackData):
         result = connection.execute(query)
         query_result = result.fetchall()
         df = pd.DataFrame(query_result, columns=['name', 'artists'])
-
-        # Deserialize the JSON string back to a list
-        df['artists'] = df['artists'].apply(json.loads)
 
     print("DF = ", df)
 
@@ -233,6 +269,27 @@ def promptChat():
 
 if __name__ == "__main__":
 
+    # Make track_list.db
+    makeEmptySQLDB()
+
+    # with engine.connect() as connection:
+    #     count_query = db.text("SELECT COUNT(*) FROM tracks;")
+    #     result = connection.execute(count_query)
+    #     count = result.scalar()  # Get the scalar result (single value)
+
+    #     if count == 0:
+    #         print("The 'tracks' table is currently empty.")
+    #     else:
+    #         print(f"The 'tracks' table contains {count} records.")
+
+    # # Clear any previous data
+    # with engine.connect() as connection:
+    #     delete_query = db.text("DELETE * FROM tracks;")
+    #     connection.execute(delete_query)
+    
+
+
+
     # Gain Access to Spotify API
     requestResponse = connectSpotifyAPI()
 
@@ -241,16 +298,34 @@ if __name__ == "__main__":
         # Get User's playlist data
         # Add a loop
         # input("Add another playlist?: ")
-        playlistData = getUserData(requestResponse)
 
-        if playlistData is not None:
-            print("\n Next step: Convert data into SQL Data Base \n")
-            # Update SQL DB if DB already exists
-            makeSQLDB(playlistData)
+        """
+         - Make sure it at least runs once
+         - Then before the prompt is run, it should ask the user if 
+            - they want to add more songs (another playlist)
+         - If yes:
+            - rerun code and add new songs to database
+         - else:
+            - run prompt as is
+        
+        """
 
-            read = promptChat()
+        get_another_playlist = "yes"
 
-            print(read)
+        while get_another_playlist == "yes":
+            playlistData = getUserData(requestResponse)
+
+            if playlistData is not None:
+                print("\n Next step: Convert data into SQL Data Base \n")
+                # Update SQL DB if DB already exists
+                appendSQLDB(playlistData)
+
+            # Will have to add user input error contingency
+            get_another_playlist = input("Do you want to add more songs? (yes/no): ").lower()
+
+        read = promptChat()
+
+        print(read)
 
         # Make an SQL Data Base out of the playlist data
 
