@@ -4,6 +4,9 @@ import os
 import requests
 import pandas as pd     # pip install pandas
 import sqlalchemy as db # pip install aslalchemy
+import sqlite3
+import openai
+from openai import OpenAI
 
 """
 User enters playlist url of a public playlist. 
@@ -35,6 +38,9 @@ def connectSpotifyAPI():
     client_secret = os.environ.get("SPOTIFY_CLIENT_SECRET")
 
     # Check if client credentials are correctly loaded
+
+    # Make sure to run source ~/.bashrc
+    
     print(f"Client ID: {client_id}")
     print(f"Client Secret: {client_secret}")
 
@@ -196,6 +202,57 @@ def makeSQLDB(trackData):
     # Personality
 # All based on the inputted music -----------------------------------------
 
+# Formats a prompt for the ChatGPT API based of the user's playlist data. 
+# Function Returns ChatGPT's insights.
+def promptChat():
+
+    # connect with the myTable database
+    connection = sqlite3.connect("track_list.db")
+    
+    # cursor object
+    crsr = connection.cursor()
+    
+    # execute the command to fetch all the data from the table emp
+    crsr.execute("SELECT name, artists FROM tracks")
+    
+    # store all the fetched data in the ans variable
+    tracks = crsr.fetchall()
+
+
+    prompt = "Tell me about myself based on my tracks:\n"
+
+    count = 1
+    for song, artists in tracks:
+        # convert `artists`` into readable format
+        matches = re.findall(r'"\s*([^"]+?)\s*"', artists)
+        readable_artist = ', '.join(matches)
+        prompt += f"{count}. {song} by {readable_artist}\n"
+        count+=1
+
+    prompt+="I want to know what this says about my: 1. Musical preferences, 2. Personal insights, 3. Personality"
+
+    print(prompt)
+
+
+    # ChatGPT Stuff
+
+    my_api_key = os.environ.get('OPENAI_KEY')
+    openai.api_key = my_api_key
+    print(my_api_key)
+
+    client = OpenAI(api_key= my_api_key)
+
+    # Specify the model to use and the messages to send
+    completion = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a musical genius that's good at reading people."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    return completion.choices[0].message.content
+
 
 # Main 
 if __name__ == "__main__":
@@ -206,11 +263,18 @@ if __name__ == "__main__":
     if requestResponse is not None:
 
         # Get User's playlist data
+        # Add a loop
+        # input("Add another playlist?: ")
         playlistData = getUserData(requestResponse)
 
         if playlistData is not None:
             print("Next step: Convert data into SQL Data Base")
+            # Update SQL DB if DB already exists
             makeSQLDB(playlistData)
+
+            read = promptChat()
+
+            print(read)
         
         # Make an SQL Data Base out of the playlist data
 
