@@ -13,16 +13,7 @@ from openai import OpenAI
 AUTH_URL = 'https://accounts.spotify.com/api/token'
 BASE_URL = 'https://api.spotify.com/v1/'
 
-"""
- - REMEMBER TO CHANGE sudo nano ~/.bashrc
-    - CHANGE TO DEFAULT SO THAT USER CAN INPUT THEIR OWN
-    - Maybe hardcode?
- - Put into README.md that user must install imports
- - Maybe we can tell them to input their 5 fav albums
-"""
-
 # Connects to the Spotify API and returns the auth. response data -----
-
 
 def connectSpotifyAPI():
 
@@ -63,8 +54,8 @@ def getPlaylistID(playlistURL: str) -> str:
     if matches:
         return matches[0]
     else:
-        print("Failed to find ID in URL.")
-        print("Are you sure you provided the URL to a playlist?")
+        print("\nFailed to find ID in URL.")
+        print("Are you sure you provided the URL to a playlist? Try Again.")
         return None
 
 
@@ -192,7 +183,7 @@ def promptChat():
     crsr = connection.cursor()
 
     # Execute a query to check if the 'tracks' table exists
-    crsr.execute("SELECT name FROM sqlite_master"
+    crsr.execute("SELECT name FROM sqlite_master "
                  "WHERE type='table' AND name='tracks'")
 
     # Fetch the result
@@ -293,6 +284,6 @@ if __name__ == "__main__":
         if read:
             print(read)
         else:
-            print("You ain't got no trackdata gang!")
+            print("\nYou ain't got no trackdata gang!")
 
     print("\n------------------------Program Ended--------------------------")
