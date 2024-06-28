@@ -255,12 +255,12 @@ def addMoreSongs(prompt):
 if __name__ == "__main__":
 
     # Introductory Blerb
-    print("\n:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+    print("\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
     print("\nHello! Welcome to Tune Teller.")
 
-    print("Tune Teller will provide users with meaningful insights into what " +
-          "their music taste says about their:\n")
+    print("Tune Teller will provide users with meaningful insights into what" +
+          " their music taste says about their:\n")
     print("\t1. Musical Preferences")
     print("\t2. Personal Insights")
     print("\t3. Personality\n")
@@ -294,11 +294,11 @@ if __name__ == "__main__":
             get_another_playlist = addMoreSongs(question)
 
         # Get AI's insight
-        print("---------------------------------------------------------------")
+        print("--------------------------------------------------------------")
 
         print("\nTune Teller is generating insights from these songs ... \n")
         read = promptChat()
-        print("---------------------------------------------------------------")
+        print("--------------------------------------------------------------")
 
         if read:
             print("\nHello! I, Tune Teller, have some insights for you: \n")
@@ -307,4 +307,4 @@ if __name__ == "__main__":
             print("\n... Wait, there is no track data :( !")
 
     print("\n[ Program Ended ]")
-    print("\n:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+    print("\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
