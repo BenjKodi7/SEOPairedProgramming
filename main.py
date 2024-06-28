@@ -2,8 +2,8 @@ import json
 import re
 import os
 import requests
-import pandas as pd  # pip install pandas
-import sqlalchemy as db  # pip install aslalchemy
+import pandas as pd
+import sqlalchemy as db
 import sqlite3
 import openai
 from openai import OpenAI
@@ -73,14 +73,9 @@ def getPlaylistID(playlistURL: str) -> str:
 def getUserData(auth_response_data):
 
     playlist_URL = input("Enter the URL of your " +
-                                "desired Spotify playlist: ")
-    # private playlist : testURL = "https://open.spotify.com/playlist/6apWQTrRNhEMuBujns9chK?si=9c88080e69964873&pt=01d18107817e41c4565f70c9c07a9e87"
-    # public playlist: testURL = "https://open.spotify.com/playlist/0I4PTtWuqYVcVfVUPat2jT?si=4176e6499f0f46dd"
+                         "desired Spotify playlist: ")
 
-    # testURL = "https://open.spotify.com/playlist/0I4PTtWuqYVcVfVUPat2jT?si=4176e6499f0f46dd"
     playlistID = getPlaylistID(playlist_URL)
-
-    # print(playlistID)   # test that getPlaylistID works correctly
 
     if playlistID is None:
         return None
@@ -110,7 +105,8 @@ def getUserData(auth_response_data):
 
             for item in albumData['tracks']['items']:
                 track_name = item['track']['name']
-                artist_names = [artist['name'] for artist in item['track']['artists']]
+                artist_names = [artist['name'] for artist
+                                in item['track']['artists']]
                 tracks.append({'name': track_name, 'artists': artist_names})
 
             # Convert to DataFrame
@@ -126,7 +122,8 @@ def getUserData(auth_response_data):
 
             if response.status_code == 404:
                 print("The URL you provided may belong to a private playlist.")
-                print("Try making the playlist public, or providing the URL of a different (public) playlist.")
+                print("Try making the playlist public, or providing"
+                      "the URL of a different (public) playlist.")
             return None
 
     else:
@@ -138,37 +135,10 @@ def getUserData(auth_response_data):
         print("Response contains error: ", error)
         print("Error description: :", error_description)
 
-
-# Parse through the reponse.json() and retrieve all of
-        # the song titles, artists, and genres
-# 3 Seperate functions:
-        # Input - json dictionary
-        # Output - List of titles, artists, and genres --------------------
-
-
 # Store the songs respectively with their titles,
         # artists and genres into an SQL Database ------------------------
 
-# Create empty DB (replace if one already exists)
-# def makeEmptySQLDB():
 
-#     # Create Engine Object
-#     engine = db.create_engine('sqlite:///track_list.db')
-
-#     trackData = pd.DataFrame([{'name': "", 'artists': ""}])
-
-#     # Write DataFrame to SQL database
-#     trackData.to_sql('tracks', con=engine, if_exists='replace', index=False)
-
-#     # Read data back from SQL database and print it
-#     with engine.connect() as connection:
-#         query = db.text("SELECT * FROM tracks;")
-#         result = connection.execute(query)
-#         query_result = result.fetchall()
-#         df = pd.DataFrame(query_result, columns=['name', 'artists'])
-
-#     print("DF = ", df)
-        
 def makeEmptySQLDB():
     # Create Engine Object
     engine = db.create_engine(f'sqlite:///track_list.db')
@@ -187,6 +157,8 @@ def makeEmptySQLDB():
     print(f"The database 'track_list.db' has been emptied.")
 
 # Append track data to an existing Database
+
+
 def appendSQLDB(trackData):
     # Convert the list of artists to a JSON string
     trackData['artists'] = trackData['artists'].apply(json.dumps)
@@ -206,19 +178,31 @@ def appendSQLDB(trackData):
 
     print("DF = ", df)
 
-
 # Give ChatGPT this database as input and
     # ask it to tell the user about their: ---------------
 
 # Formats a prompt for the ChatGPT API based of the user's playlist data.
 # Function Returns ChatGPT's insights.
+
+
 def promptChat():
 
-    # connect with the myTable database
-    connection = sqlite3.connect("track_list.db")
+    connection = sqlite3.connect('track_list.db')
 
-    # cursor object
     crsr = connection.cursor()
+
+    # Execute a query to check if the 'tracks' table exists
+    crsr.execute("SELECT name FROM sqlite_master"
+                 "WHERE type='table' AND name='tracks'")
+
+    # Fetch the result
+    table_exists = crsr.fetchone()
+
+    # Check if the table exists
+    if table_exists:
+        print("\nThe table 'tracks' exists.")
+    else:
+        return None
 
     # execute the command to fetch all the data from the table emp
     crsr.execute("SELECT name, artists FROM tracks")
@@ -248,7 +232,6 @@ def promptChat():
 
     my_api_key = os.environ.get('OPENAI_KEY')
     openai.api_key = my_api_key
-    # print(my_api_key)
 
     client = OpenAI(api_key=my_api_key)
 
@@ -264,55 +247,35 @@ def promptChat():
 
     return completion.choices[0].message.content
 
+
+def addMoreSongs(prompt):
+    while True:
+        try:
+            response = input(prompt).strip().lower()
+            if response == "yes" or response == "no":
+                return response
+            else:
+                raise ValueError("Invalid response")
+        except ValueError as e:
+            print(f"Error: {e}. Please enter 'yes' or 'no'.")
+
 # Main (Only run when necessary)
 
 
 if __name__ == "__main__":
 
-    # Make track_list.db
+    # Make an empty SQL Database with columns song and artist
     makeEmptySQLDB()
-
-    # with engine.connect() as connection:
-    #     count_query = db.text("SELECT COUNT(*) FROM tracks;")
-    #     result = connection.execute(count_query)
-    #     count = result.scalar()  # Get the scalar result (single value)
-
-    #     if count == 0:
-    #         print("The 'tracks' table is currently empty.")
-    #     else:
-    #         print(f"The 'tracks' table contains {count} records.")
-
-    # # Clear any previous data
-    # with engine.connect() as connection:
-    #     delete_query = db.text("DELETE * FROM tracks;")
-    #     connection.execute(delete_query)
-    
-
-
 
     # Gain Access to Spotify API
     requestResponse = connectSpotifyAPI()
 
     if requestResponse is not None:
 
-        # Get User's playlist data
-        # Add a loop
-        # input("Add another playlist?: ")
-
-        """
-         - Make sure it at least runs once
-         - Then before the prompt is run, it should ask the user if 
-            - they want to add more songs (another playlist)
-         - If yes:
-            - rerun code and add new songs to database
-         - else:
-            - run prompt as is
-        
-        """
-
         get_another_playlist = "yes"
 
         while get_another_playlist == "yes":
+            # Make an SQL Data Base out of the playlist data
             playlistData = getUserData(requestResponse)
 
             if playlistData is not None:
@@ -321,12 +284,15 @@ if __name__ == "__main__":
                 appendSQLDB(playlistData)
 
             # Will have to add user input error contingency
-            get_another_playlist = input("Do you want to add more songs? (yes/no): ").lower()
+            question = "Do you want to add more songs? (yes/no): "
+
+            get_another_playlist = addMoreSongs(question)
 
         read = promptChat()
 
-        print(read)
+        if read:
+            print(read)
+        else:
+            print("You ain't got no trackdata gang!")
 
-        # Make an SQL Data Base out of the playlist data
-
-    print("\n--------------------------Program Ended--------------------------")
+    print("\n------------------------Program Ended--------------------------")

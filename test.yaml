@@ -16,7 +16,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip pytest
           pip install coverage                           #this is new
-          # Install all of our libraries
+          pip install json
+          pip install re
+          pip install os
+          pip install requests
+          pip install pandas
+          pip install sqlalchemy
+          pip install sqlite3
+          pip3 install openai
 
       - name: Test with unittest
         run: python3 -m unittest test.py
