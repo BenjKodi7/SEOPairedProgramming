@@ -47,3 +47,6 @@ Run the file so the environments are set for this terminal session: "source ~/.b
 Lastly, run this command "python3 main.py" in the terminal and you should be prompted to add the URL of your preferred Spotify Playlist.
 
 Follow the directions prompted in the terminal to see your ChatGPT response.
+
+### DISCLAIMER:
+Playlist entries capped at 100 tracks
