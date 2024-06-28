@@ -15,6 +15,7 @@ BASE_URL = 'https://api.spotify.com/v1/'
 
 # Connects to the Spotify API and returns the auth. response data -----
 
+
 def connectSpotifyAPI():
 
     # Get client credentials from environment variables
