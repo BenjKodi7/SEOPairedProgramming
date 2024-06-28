@@ -13,8 +13,8 @@ from openai import OpenAI
 AUTH_URL = 'https://accounts.spotify.com/api/token'
 BASE_URL = 'https://api.spotify.com/v1/'
 
-# Connects to the Spotify API and returns the auth. response data -----
 
+# Connects to the Spotify API and returns the auth. response data -----
 def connectSpotifyAPI():
 
     # Get client credentials from environment variables
@@ -37,8 +37,8 @@ def connectSpotifyAPI():
     if auth_response.status_code == 200:
 
         # Checks if client credentials are correctly loaded
-        #print("Client ID: Found")
-        #print("Client Secret: Found")
+        # print("Client ID: Found")
+        # print("Client Secret: Found")
 
         # Return response
         return auth_response.json()
@@ -91,7 +91,8 @@ def getUserData(auth_response_data):
             albumData = response.json()
 
             # Create a list to store track details
-            print(f"\nAdding playlist \" {albumData['name']} \" to database ...")
+            print("")
+            print(f"Adding playlist \" {albumData['name']} \" to database ...")
             tracks = []
 
             for item in albumData['tracks']['items']:
@@ -212,9 +213,10 @@ def promptChat():
     print(songs)
 
     prompt_str += songs
-    prompt_str += ("\nI want to know what these songs say about my: \n"
-                    "1. Musical preferences\n2. Personal insights"
-                    "\n3. Personality\n")
+    prompt_str += ("\nI want to know what these songs say about my:")
+    prompt_str += ("\n1. Musical preferences")
+    prompt_str += ("\n2. Personal insights")
+    prompt_str += ("\n3. Personality\n")
 
     # ChatGPT Stuff
 
@@ -262,9 +264,9 @@ if __name__ == "__main__":
     print("\t1. Musical Preferences")
     print("\t2. Personal Insights")
     print("\t3. Personality\n")
-    print("All Tune Teller needs in exchange is the URL to your favorite " + 
+    print("All Tune Teller needs in exchange is the URL to your favorite " +
           "(public) Spotify playlists :) \n")
-    
+
     # Make an empty SQL Database with columns song and artist
     print("-----------------------------------------------------------------")
     makeEmptySQLDB()
@@ -291,14 +293,12 @@ if __name__ == "__main__":
 
             get_another_playlist = addMoreSongs(question)
 
-
         # Get AI's insight
         print("---------------------------------------------------------------")
 
         print("\nTune Teller is generating insights from these songs ... \n")
         read = promptChat()
         print("---------------------------------------------------------------")
-
 
         if read:
             print("\nHello! I, Tune Teller, have some insights for you: \n")
