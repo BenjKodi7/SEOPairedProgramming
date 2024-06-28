@@ -37,8 +37,8 @@ def connectSpotifyAPI():
     if auth_response.status_code == 200:
 
         # Checks if client credentials are correctly loaded
-        print("Client ID: Found")
-        print("Client Secret: Found")
+        #print("Client ID: Found")
+        #print("Client Secret: Found")
 
         # Return response
         return auth_response.json()
@@ -55,7 +55,7 @@ def getPlaylistID(playlistURL: str) -> str:
         return matches[0]
     else:
         print("\nFailed to find ID in URL.")
-        print("Are you sure you provided the URL to a playlist? Try Again.")
+        print("Are you sure you provided the URL to a playlist? Try Again.\n")
         return None
 
 
@@ -63,7 +63,7 @@ def getPlaylistID(playlistURL: str) -> str:
 # Returns the songs/artists in json format
 def getUserData(auth_response_data):
 
-    playlist_URL = input("Enter the URL of your " +
+    playlist_URL = input("\nEnter the URL of your " +
                          "desired Spotify playlist: ")
 
     playlistID = getPlaylistID(playlist_URL)
@@ -91,7 +91,7 @@ def getUserData(auth_response_data):
             albumData = response.json()
 
             # Create a list to store track details
-            print("Playlist Title: ", albumData['name'])
+            print(f"\nAdding playlist \" {albumData['name']} \" to database ...")
             tracks = []
 
             for item in albumData['tracks']['items']:
@@ -108,13 +108,13 @@ def getUserData(auth_response_data):
             return tracks_df
 
         else:
-            print("Attempt to retrieve album tracks failed :(")
-            print("Status Code: ", response.status_code)
+            print("\nAttempt to retrieve album tracks failed :(")
+            print(f"Status Code: {response.status_code}\n")
 
             if response.status_code == 404:
                 print("The URL you provided may belong to a private playlist.")
-                print("Try making the playlist public, or providing"
-                      "the URL of a different (public) playlist.")
+                print("Try making the playlist public, or providing "
+                      "the URL of a different (public) playlist.\n")
             return None
 
     else:
@@ -145,7 +145,8 @@ def makeEmptySQLDB():
             drop_table_query = db.text(f"DROP TABLE IF EXISTS {table};")
             connection.execute(drop_table_query)
 
-    print(f"The database 'track_list.db' has been emptied.")
+    print("The database 'track_list.db' has been emptied...")
+    print("Tune Teller is ready to go!")
 
 # Append track data to an existing Database
 
@@ -166,8 +167,6 @@ def appendSQLDB(trackData):
         result = connection.execute(query)
         query_result = result.fetchall()
         df = pd.DataFrame(query_result, columns=['name', 'artists'])
-
-    print("DF = ", df)
 
 # Give ChatGPT this database as input and
     # ask it to tell the user about their: ---------------
@@ -190,9 +189,7 @@ def promptChat():
     table_exists = crsr.fetchone()
 
     # Check if the table exists
-    if table_exists:
-        print("\nThe table 'tracks' exists.")
-    else:
+    if not table_exists:
         return None
 
     # execute the command to fetch all the data from the table emp
@@ -202,22 +199,22 @@ def promptChat():
     tracks = crsr.fetchall()
 
     prompt_str = "\nTell me about myself based on my songs:\n"
-    prompt_rest = ""
-    print(prompt_str)
+    songs = ""
 
     count = 1
     for song, artists in tracks:
         # convert `artists`` into readable format
         matches = re.findall(r'"\s*([^"]+?)\s*"', artists)
         readable_artist = ', '.join(matches)
-        prompt_rest += f"{count}. {song} by {readable_artist}\n"
+        songs += f"{count}. {song} by {readable_artist}\n"
         count += 1
 
-    prompt_rest += ("\nI want to know what these songs say about my: \n"
+    print(songs)
+
+    prompt_str += songs
+    prompt_str += ("\nI want to know what these songs say about my: \n"
                     "1. Musical preferences\n2. Personal insights"
                     "\n3. Personality\n")
-
-    print(prompt_rest)
 
     # ChatGPT Stuff
 
@@ -232,7 +229,7 @@ def promptChat():
         messages=[
             {"role": "system", "content":
              "You are a musical genius that's good at reading people."},
-            {"role": "user", "content": prompt_rest}
+            {"role": "user", "content": prompt_str}
         ]
     )
 
@@ -255,8 +252,23 @@ def addMoreSongs(prompt):
 
 if __name__ == "__main__":
 
+    # Introductory Blerb
+    print("\n:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+    print("\nHello! Welcome to Tune Teller.")
+
+    print("Tune Teller will provide users with meaningful insights into what " +
+          "their music taste says about their:\n")
+    print("\t1. Musical Preferences")
+    print("\t2. Personal Insights")
+    print("\t3. Personality\n")
+    print("All Tune Teller needs in exchange is the URL to your favorite " + 
+          "(public) Spotify playlists :) \n")
+    
     # Make an empty SQL Database with columns song and artist
+    print("-----------------------------------------------------------------")
     makeEmptySQLDB()
+    print("-----------------------------------------------------------------")
 
     # Gain Access to Spotify API
     requestResponse = connectSpotifyAPI()
@@ -270,20 +282,29 @@ if __name__ == "__main__":
             playlistData = getUserData(requestResponse)
 
             if playlistData is not None:
-                print("\n Next step: Convert data into SQL Data Base \n")
                 # Update SQL DB if DB already exists
                 appendSQLDB(playlistData)
+                print("Playlist successfully added to playlist.\n")
 
             # Will have to add user input error contingency
             question = "Do you want to add more songs? (yes/no): "
 
             get_another_playlist = addMoreSongs(question)
 
+
+        # Get AI's insight
+        print("---------------------------------------------------------------")
+
+        print("\nTune Teller is generating insights from these songs ... \n")
         read = promptChat()
+        print("---------------------------------------------------------------")
+
 
         if read:
+            print("\nHello! I, Tune Teller, have some insights for you: \n")
             print(read)
         else:
-            print("\nYou ain't got no trackdata gang!")
+            print("\n... Wait, there is no track data :( !")
 
-    print("\n------------------------Program Ended--------------------------")
+    print("\n[ Program Ended ]")
+    print("\n:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
